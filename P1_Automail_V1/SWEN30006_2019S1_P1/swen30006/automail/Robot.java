@@ -99,6 +99,7 @@ public class Robot {
                     delivery.deliver(deliveryItem);
                     deliveryItem = null;
                     deliveryCounter++;
+                    teamStep = INDIVIDUAL_DELIVERY;
                     if(deliveryCounter > 2){  // Implies a simulation bug
                     	throw new ExcessiveDeliveryException();
                     }
@@ -164,7 +165,7 @@ public class Robot {
      * Prints out the change in state
      * @param nextState the state to which the robot is transitioning
      */
-    private void changeState(RobotState nextState){
+    private void changeState(RobotState nextState) {
     	assert(!(deliveryItem == null && tube != null));
     	if (current_state != nextState) {
             System.out.printf("T: %3d > %7s changed from %s to %s%n", Clock.Time(), getIdTube(), current_state, nextState);

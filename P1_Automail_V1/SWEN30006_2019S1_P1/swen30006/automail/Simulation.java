@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -114,9 +115,31 @@ public class Simulation {
     }
     
     static class ReportDelivery implements IMailDelivery {
+    	/**
+    	 * represent the heaiver mail item, when all coordinated robots report 
+    	 * delivery, then record it as delivered.
+    	 */
+    	private Map<MailItem, Integer> heavierItemMap = new HashMap<MailItem, Integer>();
     	
     	/** Confirm the delivery and calculate the total score */
-    	public void deliver(MailItem deliveryItem){
+    	public void deliver(MailItem deliveryItem) {
+    		if (deliveryItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
+    			if(!heavierItemMap.containsKey(deliveryItem)) {
+    				heavierItemMap.put(deliveryItem, 1);
+        			return;
+    			} else {
+    				int currentRecord = heavierItemMap.get(deliveryItem);
+    				heavierItemMap.put(deliveryItem, ++currentRecord);
+    				int triggerRecord = 
+    					deliveryItem.getWeight() > Robot.PAIR_MAX_WEIGHT ? 3:2;
+    				if (triggerRecord != currentRecord) {
+    					return;
+    				} else {
+    					heavierItemMap.remove(deliveryItem);
+    				}
+    			}
+    		}   		
+    		
     		if(!MAIL_DELIVERED.contains(deliveryItem)){
     			MAIL_DELIVERED.add(deliveryItem);
                 System.out.printf("T: %3d > Delivered(%4d) [%s]%n", Clock.Time(), MAIL_DELIVERED.size(), deliveryItem.toString());
