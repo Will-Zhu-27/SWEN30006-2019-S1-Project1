@@ -152,7 +152,11 @@ public class Robot {
         }
     }
     
-    private String getIdTube() {
+    /**
+     * change to public
+     * @return
+     */
+    public String getIdTube() {
     	return String.format("%s(%1d)", id, (tube == null ? 0 : 1));
     }
     
@@ -210,5 +214,4 @@ public class Robot {
 		tube = mailItem;
 		if (tube.weight > INDIVIDUAL_MAX_WEIGHT) throw new ItemTooHeavyException();
 	}
-
 }

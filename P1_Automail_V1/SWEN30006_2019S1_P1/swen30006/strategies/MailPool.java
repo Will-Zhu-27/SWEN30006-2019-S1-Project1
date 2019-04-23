@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.ListIterator;
 
+import automail.Clock;
 import automail.MailItem;
 import automail.PriorityMailItem;
 import automail.Robot;
@@ -27,6 +28,7 @@ public class MailPool implements IMailPool {
 		private MailItem mailItem;
 		private int numOfNeededRobots;
 		private List<Robot> teamRobots;
+		
 		public HeavierMailItem(MailItem mailItem) {
 			this.mailItem = mailItem;
 			if (mailItem.getWeight() <= Robot.PAIR_MAX_WEIGHT) {
@@ -35,6 +37,8 @@ public class MailPool implements IMailPool {
 				numOfNeededRobots = 3;
 			}
 			teamRobots = new ArrayList<Robot>();
+			System.out.printf("T: %3d > Heavier mail item(ID:%s) request %d robots to delivery.%n",
+				Clock.Time(), mailItem.getId(), numOfNeededRobots);
 		}
 		
 		public int getNumOfNeededRobots() {
@@ -54,11 +58,20 @@ public class MailPool implements IMailPool {
 				return false;
 			} else {
 				teamRobots.add(robot);
+				System.out.printf("T: %3d > %7s joins the team to delivery [%s]%n",
+					Clock.Time(), robot.getIdTube(), mailItem.toString());
+				if (numOfNeededRobots - teamRobots.size() != 0) {
+					System.out.printf("T: %3d > Heavier mail item(ID:%s) still needs %d extra robots to delivery.%n",
+						Clock.Time(), mailItem.getId(),
+						numOfNeededRobots - teamRobots.size());
+				}		
 				return true;
 			}
 		}
 		
 		public void teamRobotsDispatch() {
+			System.out.printf("T: %3d > Heavier mail item(ID:%s) gets enough robots, robots as a team begin to dispatch.%n",
+						Clock.Time(), mailItem.getId());
 			for(Robot robot:teamRobots) {
 				robot.dispatch();
 			}
@@ -124,6 +137,7 @@ public class MailPool implements IMailPool {
 		Robot robot = i.next();
 		assert(robot.isEmpty());
 		// System.out.printf("P: %3d%n", pool.size());
+		// meet the heavier mail item request
 		if (heavierItem != null) {
 			heavierItem.teamRobotsAdd(robot);
 			robot.addToHand(heavierItem.getMailItem());
@@ -135,11 +149,14 @@ public class MailPool implements IMailPool {
 				heavierItem.teamRobotsDispatch();
 				heavierItem = null;
 			}
-		} else {
+		} 
+		// start a new mail item delivery
+		else {
 			ListIterator<Item> j = pool.listIterator();
 			if (pool.size() > 0) {
 				try {
 					MailItem nextItem = j.next().mailItem;
+					// a heavier mail item
 					if (nextItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
 						heavierItem = new HeavierMailItem(nextItem);
 						heavierItem.teamRobotsAdd(robot);
@@ -149,6 +166,7 @@ public class MailPool implements IMailPool {
 					if (pool.size() > 0) {
 						robot.addToTube(getNormalMailItem());
 					}
+					// begin to dispatch if the item is not a heavier item
 					if (heavierItem == null) {
 						robot.dispatch(); // send the robot off if it has any items to deliver
 					}
