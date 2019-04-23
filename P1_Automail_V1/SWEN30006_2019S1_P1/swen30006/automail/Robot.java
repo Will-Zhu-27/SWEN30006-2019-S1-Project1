@@ -30,6 +30,13 @@ public class Robot {
     
     private int deliveryCounter;
     
+    static private final int INDIVIDUAL_DELIVERY = -1;
+    /**
+     * If the value = INDIVIDUAL_DELIVERY, it means the robot delivers
+     * individually. If the value > -1, the value records the step, when 
+     * value == 3, the robot moves.
+     */
+    private int teamStep;
 
     /**
      * Initiates the robot's location at the start to be at the mailroom
@@ -47,6 +54,7 @@ public class Robot {
         this.mailPool = mailPool;
         this.receivedDispatch = false;
         this.deliveryCounter = 0;
+        this.teamStep = INDIVIDUAL_DELIVERY;
     }
     
     public void dispatch() {
@@ -126,10 +134,21 @@ public class Robot {
      * @param destination the floor towards which the robot is moving
      */
     private void moveTowards(int destination) {
+    	if(teamStep != INDIVIDUAL_DELIVERY) {
+    		teamStep++;
+    		if (teamStep != 3) {
+    			return;
+    		}
+    	}
+    	
         if(current_floor < destination){
             current_floor++;
         } else {
             current_floor--;
+        }
+        
+        if (teamStep != INDIVIDUAL_DELIVERY) {
+        	teamStep = 0;
         }
     }
     
@@ -174,7 +193,16 @@ public class Robot {
 	public void addToHand(MailItem mailItem) throws ItemTooHeavyException {
 		assert(deliveryItem == null);
 		deliveryItem = mailItem;
-		if (deliveryItem.weight > INDIVIDUAL_MAX_WEIGHT) throw new ItemTooHeavyException();
+		if (mailItem.getWeight() > INDIVIDUAL_MAX_WEIGHT) {
+			teamStep = 0;
+		} else {
+			teamStep = INDIVIDUAL_DELIVERY;
+		}
+		
+		if (deliveryItem.weight > TRIPLE_MAX_WEIGHT) {
+			System.out.println("The heavier item is " + deliveryItem.weight);
+			throw new ItemTooHeavyException();
+		}
 	}
 
 	public void addToTube(MailItem mailItem) throws ItemTooHeavyException {
