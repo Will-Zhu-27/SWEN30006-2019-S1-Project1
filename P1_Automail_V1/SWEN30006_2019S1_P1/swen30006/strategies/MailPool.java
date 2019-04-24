@@ -141,8 +141,9 @@ public class MailPool implements IMailPool {
 		if (heavierItem != null) {
 			heavierItem.teamRobotsAdd(robot);
 			robot.addToHand(heavierItem.getMailItem());
-			if (pool.size() > 0) {
-				robot.addToTube(getNormalMailItem());
+			MailItem tubeItem = null;
+			if ((tubeItem = getLightMailItem()) != null) {
+				robot.addToTube(tubeItem);
 			}
 			i.remove();
 			if (heavierItem.getCurrentNumTeamRobots() == heavierItem.getNumOfNeededRobots()) {
@@ -163,9 +164,12 @@ public class MailPool implements IMailPool {
 					}
 					robot.addToHand(nextItem); // hand first as we want higher priority delivered first
 					j.remove();
-					if (pool.size() > 0) {
-						robot.addToTube(getNormalMailItem());
+					
+					MailItem tubeItem = null;
+					if ((tubeItem = getLightMailItem()) != null) {
+						robot.addToTube(tubeItem);
 					}
+					
 					// begin to dispatch if the item is not a heavier item
 					if (heavierItem == null) {
 						robot.dispatch(); // send the robot off if it has any items to deliver
@@ -179,23 +183,33 @@ public class MailPool implements IMailPool {
 	}
 	
 	/**
-	 * get a mail which can be sent by a delivery robot and resort the mail
-	 * pool. It is used when a robot needs to add a mail item to its tube. 
-	 * Before it is used, make sure pool.size() > 0.
+	 * Get a mail which can be sent by a delivery robot. It is used when a robot
+	 * needs to add a mail item to its tube. 
 	 * 
-	 * @return a mail item which can be sent by a delivery robot
+	 * @return a mail item which can be sent by a delivery robot or null if pool
+	 * is empty or no light mail.
 	 * 
 	 * @author yuqiangz
 	 */
-	private MailItem getNormalMailItem() {
-		ListIterator<Item> poolItr = pool.listIterator();
-		MailItem normalItem = poolItr.next().mailItem;
-		while(normalItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
-			normalItem = poolItr.next().mailItem;
+	private MailItem getLightMailItem() {
+		if (pool.size() == 0) {
+			return null;
 		}
+		ListIterator<Item> poolItr = pool.listIterator();
+		MailItem lightItem = poolItr.next().mailItem;
+		while(lightItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
+			if(poolItr.hasNext()) {
+				lightItem = poolItr.next().mailItem;
+			} else {
+				lightItem = null;
+				break;
+			}
+		}
+		if (lightItem == null) {
+			return null;
+		}	
 		poolItr.remove();
-		pool.sort(new ItemComparator());
-		return normalItem;
+		return lightItem;
 	}
 	
 	@Override
