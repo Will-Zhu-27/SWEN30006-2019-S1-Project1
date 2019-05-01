@@ -10,6 +10,7 @@ import automail.Clock;
 import automail.MailItem;
 import automail.PriorityMailItem;
 import automail.Robot;
+import exceptions.HeavierItemAllocationException;
 import exceptions.ItemTooHeavyException;
 
 public class MailPool implements IMailPool {
@@ -124,57 +125,86 @@ public class MailPool implements IMailPool {
 	}
 	
 	@Override
-	public void step() throws ItemTooHeavyException {
-		try{
-			ListIterator<Robot> i = robots.listIterator();
-			while (i.hasNext()) loadRobot(i);
-		} catch (Exception e) { 
-            throw e; 
-        } 
+	public void step() throws ItemTooHeavyException, HeavierItemAllocationException {
+		ListIterator<Robot> availableRobotList = robots.listIterator();
+		while (availableRobotList.hasNext())
+			try {
+				loadRobot(availableRobotList);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		 
 	}
 	
-	private void loadRobot(ListIterator<Robot> i) throws ItemTooHeavyException {
-		Robot robot = i.next();
-		assert(robot.isEmpty());
+	private void loadRobot(ListIterator<Robot> availableRobotList) throws HeavierItemAllocationException, Exception {
+		//Robot robot = availableRobotList.next();
+		//assert(robot.isEmpty());
 		// System.out.printf("P: %3d%n", pool.size());
 		// meet the heavier mail item request
 		if (heavierItem != null) {
-			heavierItem.teamRobotsAdd(robot);
-			robot.addToHand(heavierItem.getMailItem());
-			i.remove();
-			if (heavierItem.getCurrentNumTeamRobots() == heavierItem.getNumOfNeededRobots()) {
-				heavierItem.teamRobotsDispatch();
-				heavierItem = null;
-			}
+			responseHeavierItemRequest(availableRobotList);
 		} 
-		// start a new mail item delivery
+		// start a new item allocation
 		else {
-			ListIterator<Item> j = pool.listIterator();
-			if (pool.size() > 0) {
-				try {
-					MailItem nextItem = j.next().mailItem;
-					// a heavier mail item
-					if (nextItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
-						heavierItem = new HeavierMailItem(nextItem);
-						heavierItem.teamRobotsAdd(robot);
-					}
-					robot.addToHand(nextItem); // hand first as we want higher priority delivered first
-					j.remove();
-					
-					MailItem tubeItem = null;
-					// only add tube item when hand a light item
-					if (heavierItem == null && (tubeItem = getLightMailItem()) != null) {
-						robot.addToTube(tubeItem);
-					}
-					
-					// begin to dispatch if the item is not a heavier item
-					if (heavierItem == null) {
-						robot.dispatch(); // send the robot off if it has any items to deliver
-					}
-					i.remove(); // remove from mailPool queue
-				} catch (Exception e) {
-					throw e;
+			newMailItemAllocation(availableRobotList);
+		}
+	}
+	
+	/**
+	 * 
+	 * @param availableRobotList
+	 * @throws ItemTooHeavyException
+	 * @throws HeavierItemAllocationException
+	 */
+	private void responseHeavierItemRequest(ListIterator<Robot> availableRobotList) throws ItemTooHeavyException, HeavierItemAllocationException {
+		Robot robot = availableRobotList.next();
+		assert (robot.isEmpty());
+		if (heavierItem == null) {
+			throw new HeavierItemAllocationException();
+		}
+		heavierItem.teamRobotsAdd(robot);
+		robot.addToHand(heavierItem.getMailItem());
+		availableRobotList.remove();
+		if (heavierItem.getCurrentNumTeamRobots() == heavierItem.getNumOfNeededRobots()) {
+			heavierItem.teamRobotsDispatch();
+			heavierItem = null;
+		}
+	}
+	
+	/**
+	 * 
+	 * @param availableRobotList
+	 * @throws Exception
+	 */
+	private void newMailItemAllocation(ListIterator<Robot> availableRobotList) throws Exception {
+		ListIterator<Item> j = pool.listIterator();
+		Robot robot = availableRobotList.next();
+		assert (robot.isEmpty());
+		if (pool.size() > 0) {
+			try {
+				MailItem nextItem = j.next().mailItem;
+				// a heavier mail item
+				if (nextItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
+					heavierItem = new HeavierMailItem(nextItem);
+					heavierItem.teamRobotsAdd(robot);
 				}
+				robot.addToHand(nextItem); // hand first as we want higher priority delivered first
+				j.remove();
+
+				MailItem tubeItem = null;
+				// only add tube item when hand a light item
+				if (heavierItem == null && (tubeItem = getLightMailItem()) != null) {
+					robot.addToTube(tubeItem);
+				}
+
+				// begin to dispatch if the item is not a heavier item
+				if (heavierItem == null) {
+					robot.dispatch(); // send the robot off if it has any items to deliver
+				}
+				availableRobotList.remove(); // remove from mailPool queue
+			} catch (Exception e) {
+				throw e;
 			}
 		}
 	}
