@@ -15,8 +15,8 @@ public class MailPool implements IMailPool {
 	 * item is waiting for enough delivery robots to delivery
 	 */
 	private Item unfinishedItem = null;
-	
-	
+	private LinkedList<Item> pool;
+	private LinkedList<Robot> robots;
 	
 	public class ItemComparator implements Comparator<Item> {
 		@Override
@@ -35,9 +35,6 @@ public class MailPool implements IMailPool {
 		}
 	}
 	
-	private LinkedList<Item> pool;
-	private LinkedList<Robot> robots;
-
 	public MailPool(int nrobots){
 		// Start empty
 		pool = new LinkedList<Item>();
@@ -72,24 +69,26 @@ public class MailPool implements IMailPool {
 		 
 	}
 	
-	private void loadRobot(ListIterator<Robot> availableRobotList) throws Exception, ItemAllocationException {
+	private void loadRobot(ListIterator<Robot> availableRobotList) 
+		throws Exception, ItemAllocationException {
 		// meet the heavier mail item request
 		if (unfinishedItem != null) {
 			continueUnfinishedItem(availableRobotList);
 		} 
 		// start a new item allocation
 		else {
-			newMailItemAllocation(availableRobotList);
+			newItemAllocation(availableRobotList);
 		}
 	}
 	
 	/**
-	 * Robot responses heavier item request 
+	 * Allocate robot to help delivery unfinished item. 
 	 * @param availableRobotList
 	 * @throws ItemTooHeavyException
 	 * @throws ItemAllocationException 
 	 */
-	private void continueUnfinishedItem (ListIterator<Robot> availableRobotList) throws ItemAllocationException, ItemTooHeavyException {
+	private void continueUnfinishedItem (ListIterator<Robot> availableRobotList)
+		throws ItemAllocationException, ItemTooHeavyException {
 		Robot robot = availableRobotList.next();
 		assert (robot.isEmpty());
 		if (unfinishedItem == null) {
@@ -98,43 +97,48 @@ public class MailPool implements IMailPool {
 		robot.addToHand(unfinishedItem.getMailItem());
 		unfinishedItem.robotAdd(robot);
 		availableRobotList.remove();
-		if (unfinishedItem.getCurrentNumAcquiredRobots() == unfinishedItem.getNumOfNeededRobots()) {
+		if (unfinishedItem.getCurrentNumAcquiredRobots() ==
+			unfinishedItem.getNumOfNeededRobots()) {
 			unfinishedItem.acquiredRobotsDispatch();
 			unfinishedItem = null;
 		}
 	}
 	
 	/**
-	 * 
+	 * pick a item from the pool according to the priority to delivery
 	 * @param availableRobotList
 	 * @throws Exception
 	 * @throws ItemAllocationException 
 	 */
-	private void newMailItemAllocation(ListIterator<Robot> availableRobotList) throws Exception, ItemAllocationException {
-		ListIterator<Item> j = pool.listIterator();
+	private void newItemAllocation(ListIterator<Robot> availableRobotList) 
+		throws Exception, ItemAllocationException {
+		ListIterator<Item> poolLtr = pool.listIterator();
 		Robot robot = availableRobotList.next();
 		assert (robot.isEmpty());
 		if (pool.size() > 0) {
 			try {
-				Item nextItem = j.next();
+				Item nextItem = poolLtr.next();
 				// hand first as we want higher priority delivered first
 				nextItem.robotAdd(robot);
 				robot.addToHand(nextItem.getMailItem()); 
-				j.remove();
+				poolLtr.remove();
 
 				MailItem tubeItem = null;
 				// only add tube item when hand a light item
-				if (nextItem.getHeavierMark() == false && (tubeItem = getLightMailItem()) != null) {
+				if (nextItem.getHeavierMark() == false &&
+					(tubeItem = getLightMailItem()) != null) {
 					robot.addToTube(tubeItem);
 				}
 
 				// begin to dispatch if the item is not a heavier item
-				if (nextItem.getCurrentNumAcquiredRobots() == nextItem.getNumOfNeededRobots()) {
+				if (nextItem.getCurrentNumAcquiredRobots() ==
+					nextItem.getNumOfNeededRobots()) {
 					nextItem.acquiredRobotsDispatch();
 				} else {
 					unfinishedItem = nextItem;
 				}
-				availableRobotList.remove(); // remove from mailPool queue
+				// remove from mailPool queue
+				availableRobotList.remove(); 
 			} catch (Exception e) {
 				throw e;
 			}
@@ -172,7 +176,10 @@ public class MailPool implements IMailPool {
 	}
 	
 	@Override
-	public void registerWaiting(Robot robot) { // assumes won't be there already
+	/**
+	 *  assumes won't be there already
+	 */
+	public void registerWaiting(Robot robot) { 
 		robots.add(robot);
 	}
 

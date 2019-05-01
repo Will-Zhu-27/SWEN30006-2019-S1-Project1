@@ -34,17 +34,20 @@ public class Robot {
     static private final int TEAM_MOVEMENT_COST = 3;
     
     /**
-     * If the value = INDIVIDUAL_DELIVERY, it means the robot delivers
-     * individually. If the value > -1, the value records the step, when 
-     * value == 3, the robot moves.
+     * represent how many time steps a robot makes a movement
      */
     private int movementCost;
+    /**
+     * represent before a movement, how many time steps spend, it should return
+     * 0 after make a movement
+     */
     private int currentCost;
 
     /**
      * Initiates the robot's location at the start to be at the mailroom
      * also set it to be waiting for mail.
-     * @param behaviour governs selection of mail items for delivery and behaviour on priority arrivals
+     * @param behaviour governs selection of mail items for delivery and 
+     * 	behaviour on priority arrivals
      * @param delivery governs the final delivery
      * @param mailPool is the source of mail items
      */
@@ -69,29 +72,38 @@ public class Robot {
 
     /**
      * This is called on every time step
-     * @throws ExcessiveDeliveryException if robot delivers more than the capacity of the tube without refilling
+     * @throws ExcessiveDeliveryException if robot delivers more than the 
+     * 	capacity of the tube without refilling
      */
     public void step() throws ExcessiveDeliveryException {    	
     	switch(current_state) {
-    		/** This state is triggered when the robot is returning to the mailroom after a delivery */
+    		/** This state is triggered when the robot is returning to 
+    		 * the mailroom after a delivery 
+    		 */
     		case RETURNING:
-    			/** If its current position is at the mailroom, then the robot should change state */
+    			/** If its current position is at the mailroom, then the robot 
+    			 * should change state 
+    			 */
                 if(current_floor == Building.MAILROOM_LOCATION){
                 	if (tube != null) {
                 		mailPool.addToPool(tube);
-                        System.out.printf("T: %3d > old addToPool [%s]%n", Clock.Time(), tube.toString());
+                        System.out.printf("T: %3d > old addToPool [%s]%n",
+                        	Clock.Time(), tube.toString());
                         tube = null;
                 	}
         			/** Tell the sorter the robot is ready */
         			mailPool.registerWaiting(this);
                 	changeState(RobotState.WAITING);
                 } else {
-                	/** If the robot is not at the mailroom floor yet, then move towards it! */
+                	/** If the robot is not at the mailroom floor yet, 
+                	 * then move towards it! 
+                	 */
                     moveTowards(Building.MAILROOM_LOCATION);
                 	break;
                 }
     		case WAITING:
-                /** If the StorageTube is ready and the Robot is waiting in the mailroom then start the delivery */
+                /** If the StorageTube is ready and the Robot is waiting in the
+                 *  mailroom then start the delivery */
                 if(!isEmpty() && receivedDispatch){
                 	receivedDispatch = false;
                 	deliveryCounter = 0; // reset delivery counter
@@ -100,28 +112,35 @@ public class Robot {
                 }
                 break;
     		case DELIVERING:
-    			if(current_floor == destination_floor){ // If already here drop off either way
+    			if(current_floor == destination_floor){ 
                     /** Delivery complete, report this to the simulator! */
                     delivery.deliver(deliveryItem);
                     deliveryItem = null;
                     deliveryCounter++;
                     movementCost = INDIVIDUAL_MOVEMENT_COST;
-                    if(deliveryCounter > 2){  // Implies a simulation bug
+                    // Implies a simulation bug
+                    if(deliveryCounter > 2){  
                     	throw new ExcessiveDeliveryException();
                     }
-                    /** Check if want to return, i.e. if there is no item in the tube*/
+                    /** Check if want to return, i.e. if there is no item 
+                     * in the tube
+                     */
                     if(tube == null){
                     	changeState(RobotState.RETURNING);
                     }
                     else{
-                        /** If there is another item, set the robot's route to the location to deliver the item */
+                        /** If there is another item, set the robot's route to 
+                         * the location to deliver the item 
+                         */
                         deliveryItem = tube;
                         tube = null;
                         setRoute();
                         changeState(RobotState.DELIVERING);
                     }
     			} else {
-	        		/** The robot is not at the destination yet, move towards it! */
+	        		/** The robot is not at the destination yet, 
+	        		 * move towards it! 
+	        		 */
 	                moveTowards(destination_floor);
     			}
                 break;
@@ -168,11 +187,13 @@ public class Robot {
     private void changeState(RobotState nextState) {
     	assert(!(deliveryItem == null && tube != null));
     	if (current_state != nextState) {
-            System.out.printf("T: %3d > %7s changed from %s to %s%n", Clock.Time(), getIdTube(), current_state, nextState);
+            System.out.printf("T: %3d > %7s changed from %s to %s%n", 
+            	Clock.Time(), getIdTube(), current_state, nextState);
     	}
     	current_state = nextState;
     	if(nextState == RobotState.DELIVERING){
-            System.out.printf("T: %3d > %7s-> [%s]%n", Clock.Time(), getIdTube(), deliveryItem.toString());
+            System.out.printf("T: %3d > %7s-> [%s]%n", Clock.Time(), 
+            	getIdTube(), deliveryItem.toString());
     	}
     }
 
@@ -181,7 +202,8 @@ public class Robot {
 	}
     
 	static private int count = 0;
-	static private Map<Integer, Integer> hashMap = new TreeMap<Integer, Integer>();
+	static private Map<Integer, Integer> hashMap = 
+		new TreeMap<Integer, Integer>();
 
 	@Override
 	public int hashCode() {
@@ -208,6 +230,8 @@ public class Robot {
 	public void addToTube(MailItem mailItem) throws ItemTooHeavyException {
 		assert(tube == null);
 		tube = mailItem;
-		if (tube.weight > INDIVIDUAL_MAX_WEIGHT) throw new ItemTooHeavyException();
+		if (tube.weight > INDIVIDUAL_MAX_WEIGHT) {
+			throw new ItemTooHeavyException();
+		}
 	}
 }

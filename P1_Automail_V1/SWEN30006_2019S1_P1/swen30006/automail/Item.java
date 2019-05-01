@@ -17,7 +17,8 @@ public class Item {
 		// Use stable sort to keep arrival time relative positions
 		
 		public Item(MailItem mailItem) throws ItemTooHeavyException {
-			priority = (mailItem instanceof PriorityMailItem) ? ((PriorityMailItem) mailItem).getPriorityLevel() : 1;
+			priority = (mailItem instanceof PriorityMailItem) ?
+				((PriorityMailItem) mailItem).getPriorityLevel() : 1;
 			destination = mailItem.getDestFloor();
 			this.mailItem = mailItem;
 			if (mailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT) {
@@ -25,7 +26,8 @@ public class Item {
 				numOfNeededRobots = 1;
 			} else if (mailItem.getWeight() <= Robot.TRIPLE_MAX_WEIGHT) {
 				heavierMark = true;
-				numOfNeededRobots = mailItem.getWeight() > Robot.PAIR_MAX_WEIGHT ? 3:2;
+				numOfNeededRobots = 
+					mailItem.getWeight() > Robot.PAIR_MAX_WEIGHT ? 3:2;
 			} else {
 				throw new ItemTooHeavyException();
 			}
@@ -62,13 +64,15 @@ public class Item {
 			} else {
 				acquiredRobots.add(robot);
 				if (heavierMark == true) {
-					System.out.printf("T: %3d > %7s joins the team to delivery [%s]%n", Clock.Time(), robot.getIdTube(),
-							mailItem.toString());
-					int numOfStillNeeding = numOfNeededRobots - acquiredRobots.size();
+					System.out.printf("T: %3d > %7s joins the team to delivery [%s]%n",
+						Clock.Time(), robot.getIdTube(),mailItem.toString());
+					int numOfStillNeeding = 
+						numOfNeededRobots - acquiredRobots.size();
 					if (numOfStillNeeding > 0) {
 						System.out.printf(
 								"T: %3d > Heavier mail item(ID:%s) still needs %d extra robots to delivery.%n",
-								Clock.Time(), mailItem.getId(), numOfNeededRobots - acquiredRobots.size());
+								Clock.Time(), mailItem.getId(), 
+								numOfStillNeeding);
 					}
 					if (numOfStillNeeding < 0) {
 						acquiredRobotsDispatch();

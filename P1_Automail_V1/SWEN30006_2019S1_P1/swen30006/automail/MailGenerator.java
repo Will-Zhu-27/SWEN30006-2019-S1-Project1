@@ -28,7 +28,8 @@ public class MailGenerator {
      * @param mailPool where mail items go on arrival
      * @param seed random seed for generating mail
      */
-    public MailGenerator(int mailToCreate, int mailMaxWeight, IMailPool mailPool, HashMap<Boolean,Integer> seed){
+    public MailGenerator(int mailToCreate, int mailMaxWeight, 
+    	IMailPool mailPool, HashMap<Boolean,Integer> seed){
         if(seed.containsKey(true)){
         	this.random = new Random((long) seed.get(true));
         }
@@ -38,7 +39,6 @@ public class MailGenerator {
         // Vary arriving mail by +/-20%
         MAIL_TO_CREATE = mailToCreate*4/5 + random.nextInt(mailToCreate*2/5);
         MAIL_MAX_WEIGHT = mailMaxWeight;
-        // System.out.println("Num Mail Items: "+MAIL_TO_CREATE);
         mailCreated = 0;
         complete = false;
         allMail = new HashMap<Integer,ArrayList<MailItem>>();
@@ -61,7 +61,8 @@ public class MailGenerator {
         {
         	newMailItem = new MailItem(dest_floor,arrival_time,weight);      	
         } else {
-        	newMailItem = new PriorityMailItem(dest_floor,arrival_time,weight,priority_level);
+        	newMailItem = 
+        		new PriorityMailItem(dest_floor,arrival_time,weight,priority_level);
         }
         return newMailItem;
     }
@@ -84,8 +85,10 @@ public class MailGenerator {
      * @return a random weight
      */
     private int generateWeight(){
-    	final double mean = 200.0; // grams for normal item
-    	final double stddev = 1000.0; // grams
+    	// grams for normal item
+    	final double mean = 200.0;
+    	// grams
+    	final double stddev = 1000.0; 
     	double base = random.nextGaussian();
     	if (base < 0) base = -base;
     	int weight = (int) (mean + base * stddev);
@@ -112,8 +115,8 @@ public class MailGenerator {
                 allMail.get(timeToDeliver).add(newMail);
             }
             else{
-                /** If the key doesn't exist then set a new key along with the array of MailItems to add during
-                 * that time step.
+                /** If the key doesn't exist then set a new key along with the
+                 *  array of MailItems to add during that time step.
                  */
                 ArrayList<MailItem> newMailList = new ArrayList<MailItem>();
                 newMailList.add(newMail);
@@ -122,7 +125,9 @@ public class MailGenerator {
             /** Mark the mail as created */
             mailCreated++;
 
-            /** Once we have satisfied the amount of mail to create, we're done!*/
+            /** Once we have satisfied the amount of mail to create,
+             *  we're done!
+             */
             if(mailCreated == MAIL_TO_CREATE){
                 complete = true;
             }
@@ -139,8 +144,10 @@ public class MailGenerator {
     	// Check if there are any mail to create
         if(this.allMail.containsKey(Clock.Time())){
             for(MailItem mailItem : allMail.get(Clock.Time())){
-            	if (mailItem instanceof PriorityMailItem) priority = ((PriorityMailItem) mailItem);
-                System.out.printf("T: %3d > new addToPool [%s]%n", Clock.Time(), mailItem.toString());
+            	if (mailItem instanceof PriorityMailItem) priority =
+            		((PriorityMailItem) mailItem);
+                System.out.printf("T: %3d > new addToPool [%s]%n",
+                	Clock.Time(), mailItem.toString());
                 mailPool.addToPool(mailItem);
             }
         }

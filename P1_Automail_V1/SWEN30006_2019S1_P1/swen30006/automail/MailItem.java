@@ -34,7 +34,8 @@ public class MailItem {
 
     @Override
     public String toString(){
-        return String.format("Mail Item:: ID: %6s | Arrival: %4d | Destination: %2d | Weight: %4d", id, arrival_time, destination_floor, weight);
+        return String.format("Mail Item:: ID: %6s | Arrival: %4d | Destination: %2d | Weight: %4d",
+        	id, arrival_time, destination_floor, weight);
     }
 
     /**
@@ -70,7 +71,8 @@ public class MailItem {
    }
    
 	static private int count = 0;
-	static private Map<Integer, Integer> hashMap = new TreeMap<Integer, Integer>();
+	static private Map<Integer, Integer> hashMap = 
+		new TreeMap<Integer, Integer>();
 
 	@Override
 	public int hashCode() {

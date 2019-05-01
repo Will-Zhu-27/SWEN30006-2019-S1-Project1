@@ -5,8 +5,9 @@ import automail.Robot;
 import exceptions.ItemTooHeavyException;
 
 /**
- * addToPool is called when there are mail items newly arrived at the building to add to the MailPool or
- * if a robot returns with some undelivered items - these are added back to the MailPool.
+ * addToPool is called when there are mail items newly arrived at the building 
+ * to add to the MailPool or if a robot returns with some undelivered items - 
+ * these are added back to the MailPool.
  * The data structure and algorithms used in the MailPool is your choice.
  * 
  */
@@ -24,7 +25,8 @@ public interface IMailPool {
 	void step() throws ItemTooHeavyException;
 
 	/**
-     * @param robot refers to a robot which has arrived back ready for more mailItems to deliver
+     * @param robot refers to a robot which has arrived back ready for more 
+     * 	mailItems to deliver
      */	
 	void registerWaiting(Robot robot);
 
