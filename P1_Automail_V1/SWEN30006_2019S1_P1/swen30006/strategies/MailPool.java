@@ -141,10 +141,6 @@ public class MailPool implements IMailPool {
 		if (heavierItem != null) {
 			heavierItem.teamRobotsAdd(robot);
 			robot.addToHand(heavierItem.getMailItem());
-			MailItem tubeItem = null;
-			if ((tubeItem = getLightMailItem()) != null) {
-				robot.addToTube(tubeItem);
-			}
 			i.remove();
 			if (heavierItem.getCurrentNumTeamRobots() == heavierItem.getNumOfNeededRobots()) {
 				heavierItem.teamRobotsDispatch();
@@ -166,7 +162,8 @@ public class MailPool implements IMailPool {
 					j.remove();
 					
 					MailItem tubeItem = null;
-					if ((tubeItem = getLightMailItem()) != null) {
+					// only add tube item when hand a light item
+					if (heavierItem == null && (tubeItem = getLightMailItem()) != null) {
 						robot.addToTube(tubeItem);
 					}
 					
