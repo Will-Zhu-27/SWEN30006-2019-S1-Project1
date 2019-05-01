@@ -30,13 +30,16 @@ public class Robot {
     
     private int deliveryCounter;
     
-    static private final int INDIVIDUAL_DELIVERY = -1;
+    static private final int INDIVIDUAL_MOVEMENT_COST = 1;
+    static private final int TEAM_MOVEMENT_COST = 3;
+    
     /**
      * If the value = INDIVIDUAL_DELIVERY, it means the robot delivers
      * individually. If the value > -1, the value records the step, when 
      * value == 3, the robot moves.
      */
-    private int teamStep;
+    private int movementCost;
+    private int currentCost;
 
     /**
      * Initiates the robot's location at the start to be at the mailroom
@@ -54,11 +57,14 @@ public class Robot {
         this.mailPool = mailPool;
         this.receivedDispatch = false;
         this.deliveryCounter = 0;
-        this.teamStep = INDIVIDUAL_DELIVERY;
     }
     
     public void dispatch() {
     	receivedDispatch = true;
+    	movementCost = 
+    		deliveryItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT 
+    		? TEAM_MOVEMENT_COST:INDIVIDUAL_MOVEMENT_COST;
+        currentCost = 0;
     }
 
     /**
@@ -99,7 +105,7 @@ public class Robot {
                     delivery.deliver(deliveryItem);
                     deliveryItem = null;
                     deliveryCounter++;
-                    teamStep = INDIVIDUAL_DELIVERY;
+                    movementCost = INDIVIDUAL_MOVEMENT_COST;
                     if(deliveryCounter > 2){  // Implies a simulation bug
                     	throw new ExcessiveDeliveryException();
                     }
@@ -135,11 +141,8 @@ public class Robot {
      * @param destination the floor towards which the robot is moving
      */
     private void moveTowards(int destination) {
-    	if(teamStep != INDIVIDUAL_DELIVERY) {
-    		teamStep++;
-    		if (teamStep != 3) {
-    			return;
-    		}
+    	if (++currentCost != movementCost) {
+    		return;
     	}
     	
         if(current_floor < destination){
@@ -147,10 +150,7 @@ public class Robot {
         } else {
             current_floor--;
         }
-        
-        if (teamStep != INDIVIDUAL_DELIVERY) {
-        	teamStep = 0;
-        }
+        currentCost = 0;
     }
     
     /**
@@ -198,11 +198,6 @@ public class Robot {
 	public void addToHand(MailItem mailItem) throws ItemTooHeavyException {
 		assert(deliveryItem == null);
 		deliveryItem = mailItem;
-		if (mailItem.getWeight() > INDIVIDUAL_MAX_WEIGHT) {
-			teamStep = 0;
-		} else {
-			teamStep = INDIVIDUAL_DELIVERY;
-		}
 		
 		if (deliveryItem.weight > TRIPLE_MAX_WEIGHT) {
 			System.out.println("The heavier item is " + deliveryItem.weight);
