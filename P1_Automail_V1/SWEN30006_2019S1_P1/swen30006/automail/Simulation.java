@@ -1,7 +1,6 @@
 package automail;
 
 import exceptions.ExcessiveDeliveryException;
-import exceptions.HeavierItemAllocationException;
 import exceptions.ItemTooHeavyException;
 import exceptions.MailAlreadyDeliveredException;
 import strategies.Automail;
@@ -28,7 +27,7 @@ public class Simulation {
     private static ArrayList<MailItem> MAIL_DELIVERED;
     private static double total_score = 0;
 
-    public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, HeavierItemAllocationException {
+    public static void main(String[] args) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
     	Properties automailProperties = new Properties();
 		// Default properties
     	// automailProperties.setProperty("Robots", "Big,Careful,Standard,Weak");

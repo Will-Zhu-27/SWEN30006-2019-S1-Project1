@@ -1,17 +1,13 @@
 package strategies;
 
 import java.util.LinkedList;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.ListIterator;
 
-import automail.Clock;
 import automail.Item;
 import automail.MailItem;
-import automail.PriorityMailItem;
 import automail.Robot;
-import exceptions.HeavierItemAllocationException;
+import exceptions.ItemAllocationException;
 import exceptions.ItemTooHeavyException;
 
 public class MailPool implements IMailPool {
@@ -61,7 +57,7 @@ public class MailPool implements IMailPool {
 	}
 	
 	@Override
-	public void step() throws ItemTooHeavyException, HeavierItemAllocationException {
+	public void step() {
 		ListIterator<Robot> availableRobotList = robots.listIterator();
 		while (availableRobotList.hasNext())
 			try {
@@ -69,14 +65,17 @@ public class MailPool implements IMailPool {
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			} catch (ItemAllocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		 
 	}
 	
-	private void loadRobot(ListIterator<Robot> availableRobotList) throws HeavierItemAllocationException, Exception {
+	private void loadRobot(ListIterator<Robot> availableRobotList) throws Exception, ItemAllocationException {
 		// meet the heavier mail item request
 		if (unfinishedItem != null) {
-			responseHeavierItemRequest(availableRobotList);
+			continueUnfinishedItem(availableRobotList);
 		} 
 		// start a new item allocation
 		else {
@@ -88,13 +87,13 @@ public class MailPool implements IMailPool {
 	 * Robot responses heavier item request 
 	 * @param availableRobotList
 	 * @throws ItemTooHeavyException
-	 * @throws HeavierItemAllocationException
+	 * @throws ItemAllocationException 
 	 */
-	private void responseHeavierItemRequest(ListIterator<Robot> availableRobotList) throws ItemTooHeavyException, HeavierItemAllocationException {
+	private void continueUnfinishedItem (ListIterator<Robot> availableRobotList) throws ItemAllocationException, ItemTooHeavyException {
 		Robot robot = availableRobotList.next();
 		assert (robot.isEmpty());
 		if (unfinishedItem == null) {
-			throw new HeavierItemAllocationException();
+			throw new ItemAllocationException();
 		}
 		robot.addToHand(unfinishedItem.getMailItem());
 		unfinishedItem.robotAdd(robot);
@@ -109,9 +108,9 @@ public class MailPool implements IMailPool {
 	 * 
 	 * @param availableRobotList
 	 * @throws Exception
-	 * @throws HeavierItemAllocationException 
+	 * @throws ItemAllocationException 
 	 */
-	private void newMailItemAllocation(ListIterator<Robot> availableRobotList) throws Exception, HeavierItemAllocationException {
+	private void newMailItemAllocation(ListIterator<Robot> availableRobotList) throws Exception, ItemAllocationException {
 		ListIterator<Item> j = pool.listIterator();
 		Robot robot = availableRobotList.next();
 		assert (robot.isEmpty());

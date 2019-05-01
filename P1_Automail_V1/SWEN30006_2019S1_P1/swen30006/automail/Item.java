@@ -3,7 +3,7 @@ package automail;
 import java.util.ArrayList;
 import java.util.List;
 
-import exceptions.HeavierItemAllocationException;
+import exceptions.ItemAllocationException;
 import exceptions.ItemTooHeavyException;
 
 public class Item {
@@ -56,9 +56,9 @@ public class Item {
 			return mailItem;
 		}
 		
-		public void robotAdd(Robot robot) throws HeavierItemAllocationException {
+		public void robotAdd(Robot robot) throws ItemAllocationException  {
 			if (acquiredRobots.contains(robot)) {
-				throw new HeavierItemAllocationException();
+				throw new ItemAllocationException();
 			} else {
 				acquiredRobots.add(robot);
 				if (heavierMark == true) {
@@ -72,7 +72,7 @@ public class Item {
 					}
 					if (numOfStillNeeding < 0) {
 						acquiredRobotsDispatch();
-						throw new HeavierItemAllocationException();
+						throw new ItemAllocationException();
 					}
 				}
 			}
