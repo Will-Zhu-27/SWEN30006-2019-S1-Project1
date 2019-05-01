@@ -117,12 +117,14 @@ public class Simulation {
     
     static class ReportDelivery implements IMailDelivery {
     	/**
-    	 * represent the heaiver mail item, when all coordinated robots report 
+    	 * represent the heavier mail item, when all coordinated robots report 
     	 * delivery, then record it as delivered.
     	 */
     	private Map<MailItem, Integer> heavierItemMap = new HashMap<MailItem, Integer>();
     	
-    	/** Confirm the delivery and calculate the total score */
+    	/** 
+    	 * Confirm the delivery and calculate the total score 
+    	 */
     	public void deliver(MailItem deliveryItem) {
     		if (deliveryItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
     			if(!heavierItemMap.containsKey(deliveryItem)) {

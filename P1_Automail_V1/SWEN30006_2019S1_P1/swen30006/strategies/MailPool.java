@@ -138,9 +138,6 @@ public class MailPool implements IMailPool {
 	}
 	
 	private void loadRobot(ListIterator<Robot> availableRobotList) throws HeavierItemAllocationException, Exception {
-		//Robot robot = availableRobotList.next();
-		//assert(robot.isEmpty());
-		// System.out.printf("P: %3d%n", pool.size());
 		// meet the heavier mail item request
 		if (heavierItem != null) {
 			responseHeavierItemRequest(availableRobotList);
@@ -152,7 +149,7 @@ public class MailPool implements IMailPool {
 	}
 	
 	/**
-	 * 
+	 * Robot responses heavier item request 
 	 * @param availableRobotList
 	 * @throws ItemTooHeavyException
 	 * @throws HeavierItemAllocationException
