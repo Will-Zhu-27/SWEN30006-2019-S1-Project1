@@ -15,80 +15,82 @@ import exceptions.ItemTooHeavyException;
 
 public class MailPool implements IMailPool {
 	/**
-	 * a heavier mail item waits for enough delivery robots to 
-	 * delivery
+	 * item is waiting for enough delivery robots to delivery
 	 */
-	private HeavierMailItem heavierItem = null;
+	private Item unfinishedItem = null;
 	
-	/**
-	 * Represent a heavier mail item
-	 * 
-	 * @author yuqiangz
-	 */
-	private class HeavierMailItem {
+	private class Item {
+		private int priority;
+		private int destination;
 		private MailItem mailItem;
+		// represent the num of robots this mailItem needs
 		private int numOfNeededRobots;
-		private List<Robot> teamRobots;
+		private List<Robot> acquiredRobots;
+		private boolean heavierMark;
+		// Use stable sort to keep arrival time relative positions
 		
-		public HeavierMailItem(MailItem mailItem) {
+		public Item(MailItem mailItem) throws ItemTooHeavyException {
+			priority = (mailItem instanceof PriorityMailItem) ? ((PriorityMailItem) mailItem).getPriorityLevel() : 1;
+			destination = mailItem.getDestFloor();
 			this.mailItem = mailItem;
-			if (mailItem.getWeight() <= Robot.PAIR_MAX_WEIGHT) {
-				numOfNeededRobots = 2;
+			if (mailItem.getWeight() <= Robot.INDIVIDUAL_MAX_WEIGHT) {
+				heavierMark = false;
+				numOfNeededRobots = 1;
+			} else if (mailItem.getWeight() <= Robot.TRIPLE_MAX_WEIGHT) {
+				heavierMark = true;
+				numOfNeededRobots = mailItem.getWeight() > Robot.PAIR_MAX_WEIGHT ? 3:2;
 			} else {
-				numOfNeededRobots = 3;
+				throw new ItemTooHeavyException();
 			}
-			teamRobots = new ArrayList<Robot>();
-			System.out.printf("T: %3d > Heavier mail item(ID:%s) request %d robots to delivery.%n",
-				Clock.Time(), mailItem.getId(), numOfNeededRobots);
+			acquiredRobots = new ArrayList<Robot>();
 		}
 		
 		public int getNumOfNeededRobots() {
 			return numOfNeededRobots;
 		}
 		
-		public int getCurrentNumTeamRobots() {
-			return teamRobots.size();
+		public boolean getHeavierMark() {
+			return heavierMark;
+		}
+		
+		public int getCurrentNumAcquiredRobots() {
+			return acquiredRobots.size();
 		}
 		
 		public MailItem getMailItem() {
 			return mailItem;
 		}
 		
-		public boolean teamRobotsAdd(Robot robot) {
-			if (teamRobots.contains(robot)) {
-				return false;
+		public void robotAdd(Robot robot) throws HeavierItemAllocationException {
+			if (acquiredRobots.contains(robot)) {
+				throw new HeavierItemAllocationException();
 			} else {
-				teamRobots.add(robot);
-				System.out.printf("T: %3d > %7s joins the team to delivery [%s]%n",
-					Clock.Time(), robot.getIdTube(), mailItem.toString());
-				if (numOfNeededRobots - teamRobots.size() != 0) {
-					System.out.printf("T: %3d > Heavier mail item(ID:%s) still needs %d extra robots to delivery.%n",
-						Clock.Time(), mailItem.getId(),
-						numOfNeededRobots - teamRobots.size());
-				}		
-				return true;
+				acquiredRobots.add(robot);
+				if (heavierMark == true) {
+					System.out.printf("T: %3d > %7s joins the team to delivery [%s]%n", Clock.Time(), robot.getIdTube(),
+							mailItem.toString());
+					int numOfStillNeeding = numOfNeededRobots - acquiredRobots.size();
+					if (numOfStillNeeding > 0) {
+						System.out.printf(
+								"T: %3d > Heavier mail item(ID:%s) still needs %d extra robots to delivery.%n",
+								Clock.Time(), mailItem.getId(), numOfNeededRobots - acquiredRobots.size());
+					}
+					if (numOfStillNeeding < 0) {
+						acquiredRobotsDispatch();
+						throw new HeavierItemAllocationException();
+					}
+				}
 			}
 		}
 		
-		public void teamRobotsDispatch() {
-			System.out.printf("T: %3d > Heavier mail item(ID:%s) gets enough robots, robots as a team begin to dispatch.%n",
+		public void acquiredRobotsDispatch() {
+			if (heavierMark == true) {
+				System.out.printf("T: %3d > Heavier mail item(ID:%s) gets enough robots, robots as a team begin to dispatch.%n",
 						Clock.Time(), mailItem.getId());
-			for(Robot robot:teamRobots) {
+			}			
+			for(Robot robot:acquiredRobots) {
 				robot.dispatch();
 			}
-		}
-	}
-	
-	private class Item {
-		int priority;
-		int destination;
-		MailItem mailItem;
-		// Use stable sort to keep arrival time relative positions
-		
-		public Item(MailItem mailItem) {
-			priority = (mailItem instanceof PriorityMailItem) ? ((PriorityMailItem) mailItem).getPriorityLevel() : 1;
-			destination = mailItem.getDestFloor();
-			this.mailItem = mailItem;
 		}
 	}
 	
@@ -119,8 +121,14 @@ public class MailPool implements IMailPool {
 	}
 
 	public void addToPool(MailItem mailItem) {
-		Item item = new Item(mailItem);
-		pool.add(item);
+		Item item;
+		try {
+			item = new Item(mailItem);
+			pool.add(item);
+		} catch (ItemTooHeavyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		pool.sort(new ItemComparator());
 	}
 	
@@ -139,7 +147,7 @@ public class MailPool implements IMailPool {
 	
 	private void loadRobot(ListIterator<Robot> availableRobotList) throws HeavierItemAllocationException, Exception {
 		// meet the heavier mail item request
-		if (heavierItem != null) {
+		if (unfinishedItem != null) {
 			responseHeavierItemRequest(availableRobotList);
 		} 
 		// start a new item allocation
@@ -157,15 +165,15 @@ public class MailPool implements IMailPool {
 	private void responseHeavierItemRequest(ListIterator<Robot> availableRobotList) throws ItemTooHeavyException, HeavierItemAllocationException {
 		Robot robot = availableRobotList.next();
 		assert (robot.isEmpty());
-		if (heavierItem == null) {
+		if (unfinishedItem == null) {
 			throw new HeavierItemAllocationException();
 		}
-		heavierItem.teamRobotsAdd(robot);
-		robot.addToHand(heavierItem.getMailItem());
+		robot.addToHand(unfinishedItem.getMailItem());
+		unfinishedItem.robotAdd(robot);
 		availableRobotList.remove();
-		if (heavierItem.getCurrentNumTeamRobots() == heavierItem.getNumOfNeededRobots()) {
-			heavierItem.teamRobotsDispatch();
-			heavierItem = null;
+		if (unfinishedItem.getCurrentNumAcquiredRobots() == unfinishedItem.getNumOfNeededRobots()) {
+			unfinishedItem.acquiredRobotsDispatch();
+			unfinishedItem = null;
 		}
 	}
 	
@@ -173,31 +181,31 @@ public class MailPool implements IMailPool {
 	 * 
 	 * @param availableRobotList
 	 * @throws Exception
+	 * @throws HeavierItemAllocationException 
 	 */
-	private void newMailItemAllocation(ListIterator<Robot> availableRobotList) throws Exception {
+	private void newMailItemAllocation(ListIterator<Robot> availableRobotList) throws Exception, HeavierItemAllocationException {
 		ListIterator<Item> j = pool.listIterator();
 		Robot robot = availableRobotList.next();
 		assert (robot.isEmpty());
 		if (pool.size() > 0) {
 			try {
-				MailItem nextItem = j.next().mailItem;
-				// a heavier mail item
-				if (nextItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
-					heavierItem = new HeavierMailItem(nextItem);
-					heavierItem.teamRobotsAdd(robot);
-				}
-				robot.addToHand(nextItem); // hand first as we want higher priority delivered first
+				Item nextItem = j.next();
+				// hand first as we want higher priority delivered first
+				nextItem.robotAdd(robot);
+				robot.addToHand(nextItem.mailItem); 
 				j.remove();
 
 				MailItem tubeItem = null;
 				// only add tube item when hand a light item
-				if (heavierItem == null && (tubeItem = getLightMailItem()) != null) {
+				if (nextItem.getHeavierMark() == false && (tubeItem = getLightMailItem()) != null) {
 					robot.addToTube(tubeItem);
 				}
 
 				// begin to dispatch if the item is not a heavier item
-				if (heavierItem == null) {
-					robot.dispatch(); // send the robot off if it has any items to deliver
+				if (nextItem.getCurrentNumAcquiredRobots() == nextItem.getNumOfNeededRobots()) {
+					nextItem.acquiredRobotsDispatch();
+				} else {
+					unfinishedItem = nextItem;
 				}
 				availableRobotList.remove(); // remove from mailPool queue
 			} catch (Exception e) {
@@ -220,10 +228,10 @@ public class MailPool implements IMailPool {
 			return null;
 		}
 		ListIterator<Item> poolItr = pool.listIterator();
-		MailItem lightItem = poolItr.next().mailItem;
-		while(lightItem.getWeight() > Robot.INDIVIDUAL_MAX_WEIGHT) {
+		Item lightItem = poolItr.next();
+		while(lightItem.getHeavierMark() == true) {
 			if(poolItr.hasNext()) {
-				lightItem = poolItr.next().mailItem;
+				lightItem = poolItr.next();
 			} else {
 				lightItem = null;
 				break;
@@ -233,7 +241,7 @@ public class MailPool implements IMailPool {
 			return null;
 		}	
 		poolItr.remove();
-		return lightItem;
+		return lightItem.getMailItem();
 	}
 	
 	@Override
