@@ -55,10 +55,10 @@ public class MailPool implements IMailPool {
 	
 	@Override
 	public void step() {
-		ListIterator<Robot> availableRobotList = robots.listIterator();
-		while (availableRobotList.hasNext())
+		ListIterator<Robot> availableRobotItr = robots.listIterator();
+		while (availableRobotItr.hasNext()) {
 			try {
-				loadRobot(availableRobotList);
+				loadRobot(availableRobotItr);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -66,7 +66,7 @@ public class MailPool implements IMailPool {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		 
+		} 
 	}
 	
 	private void loadRobot(ListIterator<Robot> availableRobotList) 
